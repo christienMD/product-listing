@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { ProductGridSkeleton } from "@/features/products/components/ProductGridSkeleton";
-import { ProductResults } from "@/features/products/components/ProductResults";
+import { ProductListing } from "@/features/products/components/ProductListing";
+import { ProductListingSkeleton } from "@/features/products/components/ProductListingSkeleton";
 
 export default function ProductsPage({ searchParams }: PageProps<"/">) {
   return (
@@ -14,8 +14,8 @@ export default function ProductsPage({ searchParams }: PageProps<"/">) {
         </p>
       </header>
 
-      <Suspense fallback={<ProductGridSkeleton />}>
-        <ProductResults searchParams={searchParams} />
+      <Suspense fallback={<ProductListingSkeleton />}>
+        <ProductListing searchParams={searchParams} />
       </Suspense>
     </div>
   );

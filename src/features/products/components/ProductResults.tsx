@@ -22,6 +22,7 @@ export function ProductResults({
 
   return (
     <div className="flex flex-col gap-6">
+      <h2 className="sr-only">Results</h2>
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {describeRange(page, products.length, totalMatches)}
       </p>

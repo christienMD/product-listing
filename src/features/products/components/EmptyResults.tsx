@@ -9,7 +9,7 @@ export function EmptyResults() {
         <SearchXIcon className="size-5 text-muted-foreground" aria-hidden />
       </span>
       <div className="space-y-1">
-        <h2 className="font-medium">No products match</h2>
+        <h3 className="font-medium">No products match</h3>
         <p className="text-sm text-muted-foreground">
           Try a different search or loosen your filters.
         </p>

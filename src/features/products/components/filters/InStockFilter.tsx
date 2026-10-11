@@ -18,7 +18,7 @@ export function InStockFilter() {
           checked={query.inStockOnly}
           onCheckedChange={(checked) => updateQuery({ inStockOnly: checked === true })}
         />
-        <Label htmlFor={checkboxId} className="font-normal">
+        <Label htmlFor={checkboxId} className="cursor-pointer font-normal">
           In stock only
         </Label>
       </div>

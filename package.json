@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "snapshot:catalog": "node scripts/update-product-catalog-snapshot.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

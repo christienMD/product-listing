@@ -1,96 +1,69 @@
 # Product Catalog
 
-A responsive product listing page that pulls live data from the free
-[DummyJSON](https://dummyjson.com/docs/products) products API, with search,
-filters, sorting and pagination.
+A responsive product listing page with search, filters and product details, built
+on the free [DummyJSON](https://dummyjson.com/docs/products) products API.
 
-**Live demo:** https://product-listing-one-gules.vercel.app
+- **Live demo:** https://product-listing-one-gules.vercel.app
+- **Repository:** https://github.com/christienMD/product-listing
 
 ## Features
 
-- **Search** by product name, brand, category or tag
-- **Filter** by category, price range, minimum rating and stock
-- **Sort** by price, rating or name, with numbered pagination
-- **Shareable URLs**: every search and filter is kept in the address bar, so links and the back button work
-- **Responsive**: sidebar filters on desktop, a slide-out filter panel on mobile
-- Light and dark theme, loading skeletons, and empty and error states
+- Search by name, brand, category or tag
+- Filter by category, price range, rating and stock; sort by price, rating or name
+- Pagination; every search and filter is kept in the URL, so links can be shared
+- Product details page with image gallery, specifications and reviews
+- Responsive layout (filter panel on mobile), light and dark theme
 
-## Run it locally
+## Getting started
 
-### 1. Install the requirements
-
-- [Node.js](https://nodejs.org) **20.9 or newer** (check with `node --version`)
-- **pnpm**. The easiest way is to turn on Corepack, which comes with Node.js:
-
-  ```bash
-  corepack enable
-  ```
-
-### 2. Get the code and install dependencies
+**Requirements:** [Node.js](https://nodejs.org) 20.9+ and pnpm (run `corepack enable` to get pnpm).
 
 ```bash
 git clone https://github.com/christienMD/product-listing.git
 cd product-listing
 pnpm install
-```
-
-### 3. Start the app
-
-```bash
 pnpm dev
 ```
 
-Open http://localhost:3000 in your browser.
+Open http://localhost:3000. You don't need API keys or a `.env` file.
 
-You don't need API keys or a `.env` file. The app uses a free public API.
-
-### Other commands
-
-| Command          | What it does                                    |
-| ---------------- | ----------------------------------------------- |
-| `pnpm dev`       | Start the development server                    |
-| `pnpm build`     | Create a production build                       |
-| `pnpm start`     | Serve the production build (run `build` first)  |
-| `pnpm test`      | Run the unit tests                              |
-| `pnpm lint`      | Check the code with ESLint                      |
-| `pnpm typecheck` | Check TypeScript types                          |
+| Command                 | What it does                                  |
+| ----------------------- | --------------------------------------------- |
+| `pnpm dev`              | Start the development server                  |
+| `pnpm build`            | Create a production build                     |
+| `pnpm start`            | Serve the production build                    |
+| `pnpm test`             | Run the unit tests                            |
+| `pnpm lint`             | Lint the code                                 |
+| `pnpm typecheck`        | Check TypeScript types                        |
+| `pnpm snapshot:catalog` | Refresh the bundled fallback copy of the catalog |
 
 ## Tech stack
 
-Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui,
-zod and Vitest.
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS v4 ·
+shadcn/ui · zod · Vitest · Vercel
 
 ## How it works
 
-The DummyJSON API can't search inside a category, has no price filter, and
-limits how many requests you can make in a short time. So instead of calling
-the API on every keystroke, the server loads the whole catalog (about 200
-products) once, caches it for an hour, and does the searching, filtering,
-sorting and paging itself.
-
-```
-URL (?q=…&category=…)  →  parseProductQuery()  →  getProductPage()  →  product grid
-                                                       │
-                                         fetchProductCatalog()  (cached for 1 hour)
-```
-
-- The page layout loads instantly, and the results stream in right after.
-- The filter controls update the URL. They react immediately while the new
-  results load in the background.
-- `getProductPage()` is the only place listing data comes from. If the catalog
-  grows too large to filter in memory, only that function needs to change.
-
-## Project structure
+- **One cached catalog.** DummyJSON can't search inside a category and has no
+  price filter, so the server loads the whole catalog (~200 products) in one
+  request, caches it for an hour, and does the search, filtering, sorting and
+  paging itself.
+- **Always loads.** DummyJSON limits how many requests can come from one IP
+  address. Failed requests are retried, and if the API is still unavailable
+  the app serves a copy of the catalog bundled with the code, so the page
+  never shows an error because of the API.
+- **URL as state.** Filters update the URL. The server renders the matching
+  results, and the controls update instantly while those results load.
+- **Static where possible.** The listing's layout is prerendered and results
+  stream in; all product pages are prerendered at build time.
 
 ```
 src/
-  app/                       page, layout, error and 404 pages
-  components/                site-wide components (header, theme toggle)
-  components/ui/             shadcn/ui building blocks
+  app/                    routes: listing (/), product details (/products/[id]), error, 404
+  components/             site-wide components and shadcn/ui primitives
   features/products/
-    api/                     data loading from DummyJSON
-    lib/                     search, filter, sort and URL logic (with unit tests)
-    hooks/                   client-side URL state
-    components/              listing UI; filters/ holds each filter control
-    types.ts
+    api/                  data loading (DummyJSON adapter, listing and details queries)
+    lib/                  search, filter, sort, URL and retry logic (unit tested)
+    components/           listing, filters and details UI
+    data/                 bundled fallback copy of the catalog
 ```

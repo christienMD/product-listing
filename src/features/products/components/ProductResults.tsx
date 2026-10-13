@@ -21,7 +21,7 @@ export function ProductResults({
   const { products, totalMatches, page, pageCount } = productPage;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h2 className="sr-only">Results</h2>
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {describeRange(page, products.length, totalMatches)}

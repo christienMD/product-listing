@@ -23,7 +23,7 @@ function CategoryOption({
         aria-pressed={isSelected}
         onClick={onSelect}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+          "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1 text-left text-sm transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
           isSelected && "bg-muted font-medium",
         )}
       >

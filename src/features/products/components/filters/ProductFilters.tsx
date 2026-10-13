@@ -8,7 +8,7 @@ import type { CatalogFacets } from "@/features/products/types";
 /** All filter controls; shared by the desktop sidebar and the mobile sheet. */
 export function ProductFilters({ facets }: { facets: CatalogFacets }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <CategoryFilter categories={facets.categories} />
       <Separator />
       <PriceRangeFilter priceRange={facets.priceRange} />

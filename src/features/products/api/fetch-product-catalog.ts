@@ -1,9 +1,11 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { z } from "zod";
-import type { Product } from "@/features/products/types";
+import { fetchJsonWithRetry } from "@/features/products/lib/fetch-json-with-retry";
+import { parseDummyJsonCatalog } from "@/features/products/lib/parse-dummyjson-catalog";
+import type { ProductDetails } from "@/features/products/types";
 
 const DUMMYJSON_PRODUCTS_URL = "https://dummyjson.com/products";
 
+// Everything except `meta`, which the app never shows.
 const PRODUCT_FIELDS = [
   "title",
   "description",
@@ -14,71 +16,72 @@ const PRODUCT_FIELDS = [
   "stock",
   "brand",
   "thumbnail",
+  "images",
   "tags",
   "availabilityStatus",
+  "sku",
+  "weight",
+  "dimensions",
+  "warrantyInformation",
+  "shippingInformation",
+  "returnPolicy",
+  "minimumOrderQuantity",
+  "reviews",
 ] as const;
 
 const CATALOG_REVALIDATE_SECONDS = 60 * 60;
 
 export const PRODUCT_CATALOG_CACHE_TAG = "product-catalog";
 
-const dummyJsonProductSchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  description: z.string(),
-  category: z.string(),
-  price: z.number(),
-  discountPercentage: z.number(),
-  rating: z.number(),
-  stock: z.number(),
-  // About half of the DummyJSON catalog has no brand at all.
-  brand: z.string().optional(),
-  thumbnail: z.string(),
-  tags: z.array(z.string()),
-  availabilityStatus: z.string(),
-});
+function buildCatalogUrl(): string {
+  const url = new URL(DUMMYJSON_PRODUCTS_URL);
+  url.searchParams.set("limit", "0");
+  url.searchParams.set("select", PRODUCT_FIELDS.join(","));
+  return url.toString();
+}
 
-const dummyJsonProductListSchema = z.object({
-  products: z.array(dummyJsonProductSchema),
-  total: z.number(),
-});
+async function loadCatalogSnapshot(): Promise<ProductDetails[]> {
+  const { default: snapshot } = await import(
+    "@/features/products/data/product-catalog-snapshot.json"
+  );
+  return parseDummyJsonCatalog(snapshot);
+}
 
 /**
  * Loads the whole DummyJSON catalog (~200 products) in one request.
  *
  * The API cannot combine text search with a category filter and has no price
- * filter, and it rate-limits bursts of requests. So the catalog is fetched once,
- * cached, and narrowed on the server instead of calling the API per filter.
- * `use cache` dedupes within an instance; the `fetch` cache persists the
- * response across serverless instances.
+ * filter, so the catalog is fetched once, cached, and narrowed on the server.
+ *
+ * DummyJSON rate-limits per IP, and serverless functions share outbound IPs
+ * with other apps, so a cold request can be refused. Failed requests are
+ * retried; if the API is still unavailable, a snapshot bundled with the app is
+ * served (and cached briefly, so the live data is tried again soon). The page
+ * therefore never fails because of the API.
  */
-export async function fetchProductCatalog(): Promise<Product[]> {
+export async function fetchProductCatalog(): Promise<ProductDetails[]> {
   "use cache";
-  cacheLife("hours");
   cacheTag(PRODUCT_CATALOG_CACHE_TAG);
 
-  const url = new URL(DUMMYJSON_PRODUCTS_URL);
-  url.searchParams.set("limit", "0");
-  url.searchParams.set("select", PRODUCT_FIELDS.join(","));
-
-  const response = await fetch(url.toString(), {
-    cache: "force-cache",
-    next: {
-      revalidate: CATALOG_REVALIDATE_SECONDS,
-      tags: [PRODUCT_CATALOG_CACHE_TAG],
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `DummyJSON catalog request failed: ${response.status} ${response.statusText}`,
+  try {
+    const json = await fetchJsonWithRetry(buildCatalogUrl(), {
+      init: {
+        cache: "force-cache",
+        next: {
+          revalidate: CATALOG_REVALIDATE_SECONDS,
+          tags: [PRODUCT_CATALOG_CACHE_TAG],
+        },
+      },
+    });
+    const catalog = parseDummyJsonCatalog(json);
+    cacheLife("hours");
+    return catalog;
+  } catch (error) {
+    console.error(
+      "[product-catalog] DummyJSON unavailable, serving the bundled snapshot:",
+      error,
     );
+    cacheLife("minutes");
+    return loadCatalogSnapshot();
   }
-
-  const { products } = dummyJsonProductListSchema.parse(await response.json());
-
-  return products.map((product) => ({
-    ...product,
-    brand: product.brand ?? null,
-  }));
 }

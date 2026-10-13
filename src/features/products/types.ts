@@ -13,6 +13,26 @@ export type Product = {
   availabilityStatus: string;
 };
 
+export type ProductReview = {
+  rating: number;
+  comment: string;
+  date: string;
+  reviewerName: string;
+};
+
+/** A product with everything the details page shows. */
+export type ProductDetails = Product & {
+  images: string[];
+  sku: string;
+  weight: number;
+  dimensions: { width: number; height: number; depth: number };
+  warrantyInformation: string;
+  shippingInformation: string;
+  returnPolicy: string;
+  minimumOrderQuantity: number;
+  reviews: ProductReview[];
+};
+
 export type ProductSort =
   | "featured"
   | "price-asc"

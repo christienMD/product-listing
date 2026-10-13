@@ -1,11 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useOptimistic, useTransition, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ProductQueryContext,
   type ProductQueryContextValue,
 } from "@/features/products/hooks/use-product-query";
+import { saveLastListingUrl } from "@/features/products/lib/last-listing-url";
 import {
   DEFAULT_PRODUCT_QUERY,
   toProductSearchParams,
@@ -28,6 +36,12 @@ export function ProductQueryProvider({
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [optimisticQuery, setOptimisticQuery] = useOptimistic(query);
+
+  // `query` only changes once the URL has, so this records loaded listings only.
+  useEffect(() => {
+    const params = toProductSearchParams(query).toString();
+    saveLastListingUrl(params ? `${pathname}?${params}` : pathname);
+  }, [pathname, query]);
 
   const navigateToQuery = useCallback(
     (nextQuery: ProductQuery) => {
